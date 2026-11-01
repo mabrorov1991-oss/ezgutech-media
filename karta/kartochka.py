@@ -37,6 +37,13 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
 # ---------------------------------------------------------------- brend
 
 SARIQ = (254, 193, 7)
+# naqd narx uchun urg'u ranglari: (qorong'i fonda, oq fonda)
+NAQD_RANGLAR = {
+    "sariq": ((254, 193, 7), (196, 138, 0)),
+    "qizil": ((255, 82, 70), (214, 38, 30)),
+    "yashil": ((48, 209, 88), (22, 140, 60)),
+    "oq": (None, None),            # asosiy matn rangi
+}
 QORA = (17, 17, 17)
 KUL = (125, 125, 125)
 OQ = (255, 255, 255)
@@ -356,26 +363,31 @@ def malumot_bloki(im, tepa, matn_tagi, chet, a, qorongi):
     bor = en - chet * 2
     oraliq = 54
 
+    qorongi_r, oq_r = NAQD_RANGLAR[a.naqd_rang]
+    r_naqd = (qorongi_r if qorongi else oq_r) or r_asos
+
     def yon_qatorlar(k_yor):
-        """Asosiy narx yonidagi mayda qatorlar: [(matn, shrift, chizilganmi)]."""
+        """Asosiy narx yonidagi qatorlar: [(matn, shrift, chizilganmi, rang)]."""
         q = []
         if bosh_yorliq:
-            q.append([(bosh_yorliq, shrift("qalin", k_yor + 2), False)])
-            ikki = [(f"NAQD {a.naqd}$", shrift("orta", k_yor + 3), False)]
+            q.append([(bosh_yorliq, shrift("qalin", k_yor + 2), False, r_yordam)])
+            ikki = [("NAQD", shrift("qalin", k_yor + 1), False, r_yordam),
+                    (f"{a.naqd}$", shrift("qora", k_yor + 25), False, r_naqd)]
             if a.eski_narx:
-                ikki.append((f"{a.eski_narx}$", shrift("orta", k_yor + 1), True))
+                ikki.append((f"{a.eski_narx}$", shrift("orta", k_yor + 1),
+                             True, r_yordam))
             q.append(ikki)
         elif a.eski_narx:
-            q.append([(f"{a.eski_narx}$", shrift("orta", k_yor + 19), True)])
-            q.append([("NAQD NARXI", shrift("qalin", k_yor), False)])
+            q.append([(f"{a.eski_narx}$", shrift("orta", k_yor + 19), True, r_yordam)])
+            q.append([("NAQD NARXI", shrift("qalin", k_yor), False, r_yordam)])
         elif a.naqd_yorliq:
-            q.append([("NAQD NARXI", shrift("qalin", k_yor + 3), False)])
+            q.append([("NAQD NARXI", shrift("qalin", k_yor + 3), False, r_yordam)])
         return q
 
     def yon_eni(k_yor):
         e = 0
         for qator in yon_qatorlar(k_yor):
-            e = max(e, sum(matn_eni(d, t, f) for t, f, _ in qator)
+            e = max(e, sum(matn_eni(d, t, f) for t, f, _, _ in qator)
                     + 14 * (len(qator) - 1))
         return e
 
@@ -418,18 +430,16 @@ def malumot_bloki(im, tepa, matn_tagi, chet, a, qorongi):
     d.text((chet, narx_tagi), f"{bosh_qiy}$", font=f_narx, fill=r_asos, anchor="ls")
     x = chet + matn_eni(d, f"{bosh_qiy}$", f_narx) + 24
 
-    r_urgu = SARIQ if qorongi else (166, 116, 0)
     qatorlar = yon_qatorlar(k_yor)
-    joylar = ([narx_tagi - int(k_narx * 0.46), narx_tagi - 4]
+    joylar = ([narx_tagi - int(k_narx * 0.52), narx_tagi - 2]
               if len(qatorlar) == 2 else [narx_tagi - 8])
     for qator, yq in zip(qatorlar, joylar):
         xx = x
-        for t, f, chiziq in qator:
+        for t, f, chiziq, rang in qator:
             if chiziq:
-                chizilgan_matn(d, (xx, yq), t, f, r_yordam)
+                chizilgan_matn(d, (xx, yq), t, f, rang)
             else:
-                d.text((xx, yq), t, font=f,
-                       fill=r_urgu if t == bosh_yorliq else r_yordam, anchor="ls")
+                d.text((xx, yq), t, font=f, fill=rang, anchor="ls")
             xx += matn_eni(d, t, f) + 14
 
     enlar = ustun_enlari(k_q, k_l)
@@ -533,6 +543,8 @@ def main(argv=None):
                    choices=("onikki", "olti", "uch", "naqd"),
                    help="katta raqam sifatida nima chiqsin (standart: 12 oylik "
                         "to'lov — arzonroq ko'rinadi)")
+    p.add_argument("--naqd-rang", default="sariq", choices=sorted(NAQD_RANGLAR),
+                   help="naqd narx rangi: sariq (standart), qizil, yashil, oq")
     p.add_argument("--yorliqsiz", dest="naqd_yorliq", action="store_false",
                    help="narx yonidagi 'NAQD NARXI' yozuvini olib tashlash")
     p.add_argument("--sifat", type=int, default=92)

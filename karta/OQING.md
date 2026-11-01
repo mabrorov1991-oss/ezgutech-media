@@ -82,6 +82,7 @@ biroz ko'tariladi (do'kon suratlari ko'pincha xira chiqadi).
 | `--tel`       | telefon raqami                                  |
 | `--holat`     | o'ng tepadagi yorliq, mas. `"NASIYA 0%"`        |
 | `--asosiy`    | katta raqam nima bo'lsin: `onikki` (standart), `olti`, `uch`, `naqd` |
+| `--naqd-rang` | naqd narx rangi: `sariq` (standart), `qizil`, `yashil`, `oq` |
 | `--yorliqsiz` | narx yonidagi "NAQD NARXI" yozuvini olib tashlash |
 
 **Katta raqam — 12 oylik to'lov.** Standart holatda kartochkadagi eng katta
