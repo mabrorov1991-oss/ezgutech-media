@@ -61,7 +61,7 @@ LOGO_KESIM = (368, 8, 712, 102)
 # xavfsiz chekka — istoriyada ilova tugmalari yopib qoladigan joy.
 OLCHAMLAR = {
     "telegram": (1080, 1080, 0, "shisha"),
-    "post": (1080, 1350, 0, "panel"),
+    "post": (1080, 1350, 0, "shisha"),
     "istoriya": (1080, 1920, 190, "shisha"),
 }
 
