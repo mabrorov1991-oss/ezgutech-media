@@ -81,7 +81,15 @@ biroz ko'tariladi (do'kon suratlari ko'pincha xira chiqadi).
 | `--filial`    | filial nomi                                     |
 | `--tel`       | telefon raqami                                  |
 | `--holat`     | o'ng tepadagi yorliq, mas. `"NASIYA 0%"`        |
+| `--asosiy`    | katta raqam nima bo'lsin: `onikki` (standart), `olti`, `uch`, `naqd` |
 | `--yorliqsiz` | narx yonidagi "NAQD NARXI" yozuvini olib tashlash |
+
+**Katta raqam — 12 oylik to'lov.** Standart holatda kartochkadagi eng katta
+raqam naqd narx emas, 12 oylik to'lov bo'ladi (`185$` · `12 OYGA`) — u
+arzonroq ko'rinadi va mijozni ko'proq to'xtatadi. Naqd narx yoniga mayda
+bo'lib tushadi (`NAQD 1850$`, chegirma bo'lsa eski narx ustidan chizilgan
+holda). 12 oylik to'lov berilmasa, katta raqam o'zi naqd narxga o'tadi.
+Eski ko'rinish kerak bo'lsa — `--asosiy naqd`.
 
 Narx va nasiya ustunlari bir qatorga sig'masa, shrift kegllari avtomatik
 kichrayadi — matnlar hech qachon ustma-ust tushmaydi.

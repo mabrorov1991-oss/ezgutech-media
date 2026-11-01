@@ -335,21 +335,53 @@ def malumot_bloki(im, tepa, matn_tagi, chet, a, qorongi):
     else:
         narx_tagi = matn_tagi - 42
 
-    # --- narx qatori: chap (naqd) + o'ng (nasiya).
-    # Sig'masa kegllar avtomatik kichrayadi — matnlar ustma-ust tushmaydi.
-    oylar = [t for t in (("boshiga", a.boshiga), ("3 oy", a.uch),
-                         ("6 oy", a.olti), ("12 oy", a.onikki)) if t[1] is not None]
+    # --- narx qatori: chapda asosiy narx, o'ngda qolgan nasiya ustunlari.
+    # Asosiy narx — standart holatda 12 oylik to'lov: u naqd narxdan
+    # arzonroq ko'rinadi. --asosiy bilan o'zgartiriladi.
+    hammasi = [("boshiga", a.boshiga), ("3 oy", a.uch),
+               ("6 oy", a.olti), ("12 oy", a.onikki)]
+    tanlov = {"onikki": "12 oy", "olti": "6 oy", "uch": "3 oy"}.get(a.asosiy)
+    bosh_qiy = bosh_yorliq = None
+    if tanlov:
+        for nom_o, qiy in hammasi:
+            if nom_o == tanlov and qiy is not None:
+                bosh_qiy, bosh_yorliq = qiy, nom_o.upper() + "GA"
+                break
+    if bosh_qiy is None:                  # 12 oylik berilmagan — naqd narx
+        bosh_qiy = a.naqd
+        oylar = [t for t in hammasi if t[1] is not None]
+    else:
+        oylar = [t for t in hammasi if t[1] is not None and t[0] != tanlov]
+
     bor = en - chet * 2
     oraliq = 54
 
-    def chap_eni(k_narx, k_yor):
-        w = matn_eni(d, f"{a.naqd}$", shrift("qora", k_narx))
-        yon = 0
-        if a.eski_narx:
-            yon = max(matn_eni(d, f"{a.eski_narx}$", shrift("orta", k_yor + 19)),
-                      matn_eni(d, "NAQD NARXI", shrift("qalin", k_yor)))
+    def yon_qatorlar(k_yor):
+        """Asosiy narx yonidagi mayda qatorlar: [(matn, shrift, chizilganmi)]."""
+        q = []
+        if bosh_yorliq:
+            q.append([(bosh_yorliq, shrift("qalin", k_yor + 2), False)])
+            ikki = [(f"NAQD {a.naqd}$", shrift("orta", k_yor + 3), False)]
+            if a.eski_narx:
+                ikki.append((f"{a.eski_narx}$", shrift("orta", k_yor + 1), True))
+            q.append(ikki)
+        elif a.eski_narx:
+            q.append([(f"{a.eski_narx}$", shrift("orta", k_yor + 19), True)])
+            q.append([("NAQD NARXI", shrift("qalin", k_yor), False)])
         elif a.naqd_yorliq:
-            yon = matn_eni(d, "NAQD NARXI", shrift("qalin", k_yor + 3))
+            q.append([("NAQD NARXI", shrift("qalin", k_yor + 3), False)])
+        return q
+
+    def yon_eni(k_yor):
+        e = 0
+        for qator in yon_qatorlar(k_yor):
+            e = max(e, sum(matn_eni(d, t, f) for t, f, _ in qator)
+                    + 14 * (len(qator) - 1))
+        return e
+
+    def chap_eni(k_narx, k_yor):
+        w = matn_eni(d, f"{bosh_qiy}$", shrift("qora", k_narx))
+        yon = yon_eni(k_yor)
         return w + (24 + yon if yon else 0)
 
     def ustun_enlari(k_q, k_l):
@@ -383,16 +415,22 @@ def malumot_bloki(im, tepa, matn_tagi, chet, a, qorongi):
         break
 
     f_narx = shrift("qora", k_narx)
-    d.text((chet, narx_tagi), f"{a.naqd}$", font=f_narx, fill=r_asos, anchor="ls")
-    x = chet + matn_eni(d, f"{a.naqd}$", f_narx) + 24
-    if a.eski_narx:
-        chizilgan_matn(d, (x, narx_tagi - int(k_narx * 0.46)), f"{a.eski_narx}$",
-                       shrift("orta", k_yor + 19), r_yordam)
-        d.text((x, narx_tagi - 4), "NAQD NARXI", font=shrift("qalin", k_yor),
-               fill=r_yordam, anchor="ls")
-    elif a.naqd_yorliq:
-        d.text((x, narx_tagi - 8), "NAQD NARXI", font=shrift("qalin", k_yor + 3),
-               fill=r_yordam, anchor="ls")
+    d.text((chet, narx_tagi), f"{bosh_qiy}$", font=f_narx, fill=r_asos, anchor="ls")
+    x = chet + matn_eni(d, f"{bosh_qiy}$", f_narx) + 24
+
+    r_urgu = SARIQ if qorongi else (166, 116, 0)
+    qatorlar = yon_qatorlar(k_yor)
+    joylar = ([narx_tagi - int(k_narx * 0.46), narx_tagi - 4]
+              if len(qatorlar) == 2 else [narx_tagi - 8])
+    for qator, yq in zip(qatorlar, joylar):
+        xx = x
+        for t, f, chiziq in qator:
+            if chiziq:
+                chizilgan_matn(d, (xx, yq), t, f, r_yordam)
+            else:
+                d.text((xx, yq), t, font=f,
+                       fill=r_urgu if t == bosh_yorliq else r_yordam, anchor="ls")
+            xx += matn_eni(d, t, f) + 14
 
     enlar = ustun_enlari(k_q, k_l)
     bo = max(26, int(k_q * 0.86))
@@ -491,6 +529,10 @@ def main(argv=None):
                    help="suratni majburan to'liq qoplatish (qirqilsa ham)")
     p.add_argument("--xom", action="store_true",
                    help="suratni avtomatik yaxshilamaslik")
+    p.add_argument("--asosiy", default="onikki",
+                   choices=("onikki", "olti", "uch", "naqd"),
+                   help="katta raqam sifatida nima chiqsin (standart: 12 oylik "
+                        "to'lov — arzonroq ko'rinadi)")
     p.add_argument("--yorliqsiz", dest="naqd_yorliq", action="store_false",
                    help="narx yonidagi 'NAQD NARXI' yozuvini olib tashlash")
     p.add_argument("--sifat", type=int, default=92)
